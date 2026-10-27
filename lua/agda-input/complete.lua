@@ -8,31 +8,48 @@ for key, translations in pairs(require("agda-input.data")) do
 end
 
 function M.complete(findstart, base)
-  -- locate the start of the "word" (the last backslash before cursor)
   if findstart == 1 then
     local line = vim.api.nvim_get_current_line()
-    local col  = vim.api.nvim_win_get_cursor(0)[2] -- 0-based byte column
+    local col = vim.api.nvim_win_get_cursor(0)[2]
     for i = col, 1, -1 do
       if line:sub(i, i) == "\\" then
-        return i - 1  -- 0-based byte column of the backslash
+        return i - 1
       end
     end
     return -1
   end
 
-  -- return items whose key starts with the typed text (e.g. "\=", "\lambd")
-  local items = {}
-  for _, e in ipairs(flat) do
-    if vim.startswith(e.key, base) then
+  local base_len = #base
+  local items    = {}
+  for idx, e in ipairs(flat) do
+    if e.key:sub(1, base_len) == base then
       items[#items + 1] = {
-        word       = e.symbol,
-        filtertext = e.key,
-        abbr       = e.key .. "  " .. e.symbol,
-        menu       = "[Agda]",
-        info       = e.symbol,
+        word = e.key,
+        abbr = e.symbol .. "  " .. e.key,
+        menu = "[Agda]",
+        dup = 1, -- make sure we get all options
+        user_data = { agda_symbol = e.symbol },
+        _missing = #e.key - base_len,
+        _idx = idx,
       }
     end
   end
+
+  table.sort(items, function(a, b)
+    if a._missing ~= b._missing then
+      return a._missing < b._missing
+    end
+    if a.word ~= b.word then
+      return a.word < b.word
+    end
+    return a._idx < b._idx -- stable order within a key's symbols
+  end)
+
+  for _, item in ipairs(items) do
+    item._missing = nil
+    item._idx = nil
+  end
+
   return items
 end
 
