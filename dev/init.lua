@@ -1,21 +1,16 @@
-require("cmp").register_source("agda_input", require("agda-input.cmp"))
+-- Global bridge so `v:lua.__agda_complete` resolves reliably
+_G.__agda_complete = function(findstart, base)
+  return require("agda-input.complete").complete(findstart, base)
+end
 
-local cmp = require("cmp")
-
-cmp.setup({
-  sources = { { name = "agda_input" }},
-  mapping = cmp.mapping.preset.insert({
-    ["<Space>"] = cmp.mapping(function(fallback)
-      if cmp.visible() then
-        cmp.confirm({ select = true, behavior = cmp.ConfirmBehavior.Replace })
-        return " "  -- space after accepting
-      end
-      fallback()
-    end, { "i" }),
-  }),
+vim.api.nvim_create_autocmd("FileType", {
+  pattern = "*",
+  callback = function(args)
+    vim.api.nvim_set_option_value(
+      "completefunc", "v:lua.__agda_complete", { buf = args.buf }
+    )
+  end,
 })
-
-vim.o.completeopt = "menuone,noselect"
 
 vim.cmd([[
   enew

@@ -12,7 +12,6 @@
     in {
       packages = forAllSystems (system: pkgs:
         let
-          # Plugin ships ONLY lua/ — no flake.nix, no README, no dev/init.lua.
           src = pkgs.lib.cleanSourceWith {
             src = ./.;
             filter = path: type:
@@ -29,10 +28,7 @@
 
           neovim = pkgs.wrapNeovimUnstable pkgs.neovim-unwrapped
             (pkgs.neovimUtils.makeNeovimConfig {
-              plugins = [
-                pkgs.vimPlugins.nvim-cmp
-                agda-input
-              ];
+              plugins = [ agda-input ];
               customLuaRC = builtins.readFile ./dev/init.lua;
             });
         in {
